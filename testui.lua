@@ -217,23 +217,28 @@ local apiec = mainframe:addCheckBox():setText("Enable rednet api"):setCheckedTex
 settings.load()
 apiec.checked=settings.get("hightctl.rednetapi",false)
 switchapi(apiec,apiec.checked)
+ecnet2 = require "ecnet2"
 function apirun()
   if apie then
-    local ecnet2 = require "ecnet2"
-    local random = require "ccryptolib.random"
+    
+    random = require "ccryptolib.random"
     random.initWithTiming()
     ecnet2.open("top")
-    local id = ecnet2.Identity("/.ecnet2")
-    local protocal = id:Protocol {
-    name = "set hight",
+    id = ecnet2.Identity("/.ecnet2")
+    protocal = id:Protocol {
+    name = "set_hight",
     -- Objects must be serialized before they are sent over.
     serialize = textutils.serialize,
     deserialize = textutils.unserialize,
   }
+    
+   listener=protocal:listen()
+   connections = {}
     while true do
       local event, id, p2, p3, ch, dist = os.pullEvent()
         if event == "ecnet2_request" and id == listener.id then
-            local connection = listener:accept("hight ctl", p2)
+        --这个accept为什么没有生效?
+            connection = listener:accept("hight_ctl", p2)
             connections[connection.id] = connection
         elseif event == "ecnet2_message" and connections[id] then
             if p3 and p3["password"]==password.text and tonumber(p3["hight"]) then
@@ -246,4 +251,4 @@ function apirun()
     end
   end
 end
-parallel.waitForAll(basalt.run,run,apirun)
+parallel.waitForAll(basalt.run,run,apirun,ecnet2.daemon)
