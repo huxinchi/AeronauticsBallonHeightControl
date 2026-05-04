@@ -34,7 +34,7 @@ if not checkbasalt(basalt) then
 error("basalt is not full version, please check it")
 end
 start=false
-debug=false
+debugmode=false
 mainframe=basalt.getMainFrame()
 
 out=mainframe:addLabel():setPosition(1, 1):setSize(15,1):setText("no info")
@@ -50,6 +50,7 @@ configlist=mainframe:addDropDown()
 :addItem("front")
 :addItem("back")
 settings.define("hightctl.outside",{description ="zhe hight ctl output side",default = "right",type = "string"})
+settings.define("hightctl.rednetapi",{description="Enable rednet api",default=false,type="boolean"})
 configlist.selectedText=settings.get("hightctl.outside","right")
 function cconfig(self,index, item)
     settings.load()
@@ -118,8 +119,7 @@ while true do
                out:setText("wann,has more sensor")
            end
        end
---        if (sensor ~= nil) then
-          if (sensor == nil)and not debug then
+          if (sensor == nil)and not debugmode then
             sensor = peripheral.wrap('top')
             if (sensor==nil) then
               printError("sensor not placed")
@@ -141,7 +141,7 @@ end
 while true do
     if start==true then
       
-      if debug then
+      if debugmode then
         th=100
       else 
         th=sensor.getHeight()
@@ -193,9 +193,57 @@ elseif argv[1]=="-H" then
   start=true
   kaishiguo=true
   hight=tonumber(argv[2])
-end
-if (argv[1]=="-d")or(argv[3]=="-d") then
-  debug=true
   out:setText("start,start hight is:" .. tonumber(hight))
 end
-parallel.waitForAll(basalt.run,run)
+if (argv[1]=="-d")or(argv[3]=="-d") then
+  debugmode=true
+end
+function switchapie(self,checked)
+apie=checked
+end
+function switchapi(self,checked)
+if checked then
+password=mainframe:addInput():setPosition(21, 7)
+password.placeholder="input password"
+elseif password then
+password:destroy()
+end
+settings.load()
+settings.set("hightctl.rednetapi",checked)
+settings.save()
+apie=checked
+end
+local apiec = mainframe:addCheckBox():setText("Enable rednet api"):setCheckedText("Disabled rednet api"):setPosition(21, 6):onChange("checked", switchapi)
+settings.load()
+apiec.checked=settings.get("hightctl.rednetapi",false)
+switchapi(apiec,apiec.checked)
+function apirun()
+  if apie then
+    local ecnet2 = require "ecnet2"
+    local random = require "ccryptolib.random"
+    random.initWithTiming()
+    ecnet2.open("top")
+    local id = ecnet2.Identity("/.ecnet2")
+    local protocal = id:Protocol {
+    name = "set hight",
+    -- Objects must be serialized before they are sent over.
+    serialize = textutils.serialize,
+    deserialize = textutils.unserialize,
+  }
+    while true do
+      local event, id, p2, p3, ch, dist = os.pullEvent()
+        if event == "ecnet2_request" and id == listener.id then
+            local connection = listener:accept("hight ctl", p2)
+            connections[connection.id] = connection
+        elseif event == "ecnet2_message" and connections[id] then
+            if p3 and p3["password"]==password.text and tonumber(p3["hight"]) then
+              hight=p3["hight"]
+              connections[id]:send("ok")
+            else
+              connections[id]:send("error")
+            end
+        end
+    end
+  end
+end
+parallel.waitForAll(basalt.run,run,apirun)
