@@ -34,6 +34,7 @@ if not checkbasalt(basalt) then
 error("basalt is not full version, please check it")
 end
 start=false
+debug=false
 mainframe=basalt.getMainFrame()
 
 out=mainframe:addLabel():setPosition(1, 1):setSize(15,1):setText("no info")
@@ -118,7 +119,7 @@ while true do
            end
        end
 --        if (sensor ~= nil) then
-          if (sensor == nil) then
+          if (sensor == nil)and not debug then
             sensor = peripheral.wrap('top')
             if (sensor==nil) then
               printError("sensor not placed")
@@ -139,8 +140,12 @@ while true do
 end
 while true do
     if start==true then
-      th=sensor.getHeight()
---        th=100
+      
+      if debug then
+        th=100
+      else 
+        th=sensor.getHeight()
+      end
       local output = control:step(hight - th)
       gaoducha:setText("H difference: " .. tostring(hight - th))
       outputd:setText("raw output: " .. tostring(output))
@@ -180,5 +185,17 @@ function submitfunc(self)
   end
 end
 submit=mainframe:addButton():setPosition(5, 7):setText("submit"):onClick(submitfunc)
-
+local argv = {...}
+if (argv[1]=="-h")or(argv[1]=="-help")or(argv[1]=="--help") then
+  print("hight ctl\noptions:\n  -h -help --help:get help message\n  -d: start debug mode\n  -H [hight]:set hight and start ctl")
+  return
+elseif argv[1]=="-H" then
+  start=true
+  kaishiguo=true
+  hight=tonumber(argv[2])
+end
+if (argv[1]=="-d")or(argv[3]=="-d") then
+  debug=true
+  out:setText("start,start hight is:" .. tonumber(hight))
+end
 parallel.waitForAll(basalt.run,run)
