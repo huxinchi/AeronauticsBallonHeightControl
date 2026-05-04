@@ -193,9 +193,10 @@ elseif argv[1]=="-H" then
   start=true
   kaishiguo=true
   hight=tonumber(argv[2])
+  out:setText("start,start hight is:" .. tonumber(hight))
 end
 if (argv[1]=="-d")or(argv[3]=="-d") then
   debug=true
-  out:setText("start,start hight is:" .. tonumber(hight))
+  
 end
 parallel.waitForAll(basalt.run,run)
