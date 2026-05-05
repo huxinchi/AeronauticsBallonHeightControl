@@ -121,7 +121,7 @@ while true do
 --        if (sensor ~= nil) then
           if (sensor == nil)and not debug then
             sensor = peripheral.wrap('top')
-            if (sensor==nil) then
+            if (sensor==nil)or peripheral.getType(sensor)~="altitude_sensor" then
               printError("sensor not placed")
               gaoducha:setText("error,sensor not placed")
               outputd:setText("error,sensor not placed")
