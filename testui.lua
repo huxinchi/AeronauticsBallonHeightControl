@@ -77,6 +77,13 @@ else
     self.text="resume"
 end
 end
+function onstoplog(self)
+dataf.writeLine(']')
+stoplog=true
+dataf.close()
+self:destroy()
+out:setText("ok,stop log")
+end
 function run()--控制主函数
 while true do
     if start then
@@ -86,8 +93,13 @@ while true do
         gaoducha=mainframe:addLabel():setPosition(5, 10):setSize(15,1)--高度差显示
         outputd=mainframe:addLabel():setPosition(5, 11):setSize(15,1)--输出显示
         pause=mainframe:addButton():setPosition(5, 12):setText("pause"):onClick(pauseswitch)--暂停按键
+        
         Pid = {}--写pid
-
+        if logtofile then
+            dataf = fs.open('data.json', 'w')
+            dataf.writeLine('[')
+            mainframe:addButton():setPosition(5, 15):setText("stoplog"):onClick(onstoplog)
+        end
         function Pid.createPid(kp, ki, kd, tick, u)
             local pid = {
                 k = 0,
@@ -142,11 +154,13 @@ while true do
 end
 while true do
     if start==true then--如果开始了
-      
       if debug then
         th=100--如果调试状态，就设置当前高度为100
       else 
         th=sensor.getHeight()--设置当前高度
+      end
+      if logtofile and not stoplog then
+          dataf.writeLine(tostring(th)..",")
       end
       local output = control:step(hight - th)--步进pid
       gaoducha:setText("H difference: " .. tostring(hight - th))--设置高度差
@@ -189,7 +203,7 @@ end
 submit=mainframe:addButton():setPosition(5, 7):setText("submit"):onClick(submitfunc)--提交修改按键
 local argv = {...}--定义参数
 if (argv[1]=="-h")or(argv[1]=="-help")or(argv[1]=="--help") then
-  print("hight ctl\noptions:\n  -h -help --help:get help message\n  -d: start debug mode\n  -H [hight]:set hight and start ctl")--制作help
+  print("hight ctl\noptions:\n  -h -help --help:get help message\n  -d: start debug mode\n  -H [hight]:set hight and start ctl\n    -l:start log")--制作help
   return
 elseif argv[1]=="-H" then
   start=true--开始
@@ -197,8 +211,10 @@ elseif argv[1]=="-H" then
   hight=tonumber(argv[2])--设置高度
   out:setText("start,start hight is:" .. tonumber(hight))--设置提示
 end
-if (argv[1]=="-d")or(argv[3]=="-d") then
+if (argv[1]=="-d")or(argv[3]=="-d")or(argv[4]=="-d") then
   debug=true--开启调试模式
-  
+end
+if (argv[1]=="-l")or(argv[2]=="-l")or(argv[3]=="-l")or(argv[4]=="-l")then
+  logtofile=true
 end
 parallel.waitForAll(basalt.run,run)--启动
