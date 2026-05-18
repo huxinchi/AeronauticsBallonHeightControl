@@ -51,7 +51,10 @@ configlist=mainframe:addDropDown()--方向配置
 :addItem("right")
 :addItem("front")
 :addItem("back")
-settings.define("hightctl.outside",{description ="zhe hight ctl output side",default = "right",type = "string"})--定义设置
+settings.define("hightctl.outside",{description ="the hight ctl output side",default = "right",type = "string"})--定义设置
+settings.define("hightctl.p",{description ="pid ctl's p",default = 1.,type = "number"})
+settings.define("hightctl.i",{description ="pid ctl's i",default = .017,type = "number"})
+settings.define("hightctl.d",{description ="pid ctl's d",default = 2.,type = "number"})
 settings.load()--加载配置
 configlist.selectedText=settings.get("hightctl.outside","right")--设置默认当前配置
 function cconfig(self,index, item)--设置配置
@@ -84,15 +87,46 @@ dataf.close()
 self:destroy()
 out:setText("ok,stop log")
 end
+pti=mainframe:addLabel():setPosition(16, 7):setSize(1,1):setText("p")
+p=mainframe:addInput():setPosition(17, 7):setSize(4, 1)
+iti=mainframe:addLabel():setPosition(21, 7):setSize(1,1):setText("i")
+i=mainframe:addInput():setPosition(22, 7):setSize(4, 1)
+dti=mainframe:addLabel():setPosition(26, 7):setSize(1,1):setText("d")
+d=mainframe:addInput():setPosition(27, 7):setSize(4, 1)
 function run()--控制主函数
 while true do
     if start then
+        if type(tonumber(p.text))~="nil" then
+          reqset=true
+          settings.set("hightctl.p",tonumber(p.text))
+        end
+        if type(tonumber(i.text))~="nil" then
+          reqset=true
+          settings.set("hightctl.i",tonumber(i.text))
+        end
+        if type(tonumber(d.text))~="nil" then
+          reqset=true
+          settings.set("hightctl.d",tonumber(d.text))
+        end
+        if reqset then
+          settings.save()
+        end
+        pti:destroy()
+        iti:destroy()
+        dti:destroy()
+        p:destroy()
+        i:destroy()
+        d:destroy()
         configlist:destroy()--炸了配置列表
         settings.load()--加载配置
+        pidp=settings.get("hightctl.p",1.)
+        pidi=settings.get("hightctl.i",.017)
+        pidd=settings.get("hightctl.d",2.)
         outside=settings.get("hightctl.outside","right")--获取方向
+        pidti=mainframe:addLabel():setPosition(5, 12):setSize(15,1):setText("p:"..tostring(pidp)..",i:"..tostring(pidi)..",d:"..tostring(pidd))
         gaoducha=mainframe:addLabel():setPosition(5, 10):setSize(15,1)--高度差显示
         outputd=mainframe:addLabel():setPosition(5, 11):setSize(15,1)--输出显示
-        pause=mainframe:addButton():setPosition(5, 12):setText("pause"):onClick(pauseswitch)--暂停按键
+        pause=mainframe:addButton():setPosition(5, 13):setText("pause"):onClick(pauseswitch)--暂停按键
         
         Pid = {}--写pid
         if logtofile then
@@ -147,7 +181,7 @@ while true do
         end
 
 
-        control = Pid.createPid(1., .017, 2., 0.1, redstone.getAnalogOutput(outside))--创建pid
+        control = Pid.createPid(pidp, pidi, pidd, 0.1, redstone.getAnalogOutput(outside))--创建pid
         break
     else sleep(1)--如果没有开始，等1秒
     end
