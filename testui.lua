@@ -132,7 +132,7 @@ while true do
         if logtofile then
             dataf = fs.open('data.json', 'w')
             dataf.writeLine('[')
-            mainframe:addButton():setPosition(5, 15):setText("stoplog"):onClick(onstoplog)
+            mainframe:addButton():setPosition(5, 16):setText("stoplog"):onClick(onstoplog)
         end
         function Pid.createPid(kp, ki, kd, tick, u)
             local pid = {
